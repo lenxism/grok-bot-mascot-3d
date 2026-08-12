@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="./assets/grok-bot-mark-512.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grok Bot — 3D</title>
+    <meta
+      name="description"
+      content="Controllable 3D Grok Bot mascot. Official black pebble, white tilted eyes."
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene" aria-label="3D Grok Bot mascot"></canvas>
+
+      <header class="brand">
+        <img src="./assets/grok-bot-mark-512.png" width="36" height="36" alt="" />
+        <div>
+          <p class="brand-name">Grok Bot</p>
+          <p class="brand-sub">3D mascot</p>
+        </div>
+      </header>
+
+      <p class="hint">Drag to orbit · Scroll to zoom</p>
+
+      <aside class="panel" id="controller" aria-label="Mascot controller">
+        <section>
+          <h2>Expression</h2>
+          <div class="pills" role="radiogroup" aria-label="Expression">
+            <button type="button" data-expression="idle" aria-pressed="true">Idle</button>
+            <button type="button" data-expression="happy" aria-pressed="false">Happy</button>
+            <button type="button" data-expression="blink" aria-pressed="false">Blink</button>
+            <button type="button" data-expression="look-around" aria-pressed="false">Look</button>
+          </div>
+        </section>
+
+        <section>
+          <h2>Pose</h2>
+          <label class="slider">
+            <span>Yaw</span>
+            <input id="yaw" type="range" min="-180" max="180" value="0" />
+            <span data-readout="yaw">0°</span>
+          </label>
+          <label class="slider">
+            <span>Pitch</span>
+            <input id="pitch" type="range" min="-40" max="40" value="0" />
+            <span data-readout="pitch">0°</span>
+          </label>
+          <label class="slider">
+            <span>Scale</span>
+            <input id="scale" type="range" min="70" max="140" value="100" />
+            <span data-readout="scale">1.00</span>
+          </label>
+        </section>
+
+        <section>
+          <h2>Motion</h2>
+          <div class="pills">
+            <button type="button" data-toggle="bounce" aria-pressed="false">Bounce</button>
+            <button type="button" data-toggle="spin" aria-pressed="false">Spin</button>
+          </div>
+          <div class="pills">
+            <button type="button" data-action="nod">Nod</button>
+            <button type="button" data-action="wave">Wave</button>
+          </div>
+        </section>
+
+        <button type="button" class="reset" data-action="reset">Reset</button>
+
+        <p class="keys">
+          1 idle · 2 happy · 3 blink · 4 look
+          <br />
+          N nod · W wave · B bounce · S spin
+          <br />
+          Space blink · arrows pose · R reset
+        </p>
+      </aside>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
