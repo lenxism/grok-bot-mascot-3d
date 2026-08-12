@@ -52,7 +52,7 @@ Drag the canvas to orbit. Scroll to zoom.
 - `src/GrokBot.ts` eyes, expressions, motion
 - `src/controller.ts` panel + keyboard
 - `CASE.md` how this was made
-- `docs/` screenshots
+- `docs/` screenshots (`hero.png`, `happy.png`, `blink.png`, `look.png`, `three-quarter.png`)
 
 ## Stack
 

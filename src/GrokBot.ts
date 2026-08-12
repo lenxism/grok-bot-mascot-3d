@@ -38,6 +38,8 @@ export class GrokBot {
   private lookX = 0;
   private lookY = 0;
 
+  private nextAutoBlink = 2.6;
+
   constructor(mark: ParsedMark) {
     const pebble = createPebbleGeometry({
       points: mark.headPoints,
@@ -61,8 +63,8 @@ export class GrokBot {
     head.castShadow = true;
     head.receiveShadow = true;
 
-    this.leftEye = this.createEye(mark.eyes[0], pebble.lut, pebble.depth);
-    this.rightEye = this.createEye(mark.eyes[1], pebble.lut, pebble.depth);
+    this.leftEye = this.createEye(mark.eyes[0], head, pebble.lut, pebble.depth);
+    this.rightEye = this.createEye(mark.eyes[1], head, pebble.lut, pebble.depth);
 
     this.squash.add(head, this.leftEye.group, this.rightEye.group);
     this.motion.add(this.squash);
@@ -101,7 +103,15 @@ export class GrokBot {
       this.spinYaw += dt * 1.15;
     }
 
-    const expression = eyeTargets(state.expression, this.time);
+    if (state.expression === "idle" && this.blinkT < 0) {
+      this.nextAutoBlink -= dt;
+      if (this.nextAutoBlink <= 0) {
+        this.blinkT = 0;
+        this.nextAutoBlink = 2.7 + (this.time % 1.4);
+      }
+    }
+
+    const expression = eyeTargets(state.expression);
     const oneShotBlink = this.blinkAmount();
     const targetOpen = Math.min(expression.openness, 1 - oneShotBlink * 0.94);
     this.openness += (targetOpen - this.openness) * Math.min(1, dt * 14);
@@ -113,8 +123,8 @@ export class GrokBot {
     this.applyEyes(expression.squintRot);
 
     const breath = 1 + 0.016 * Math.sin(this.time * 1.35);
-    const happySquash = state.expression === "happy" ? 0.97 : 1;
-    const happyStretch = state.expression === "happy" ? 1.035 : 1;
+    const happySquash = state.expression === "happy" ? 0.955 : 1;
+    const happyStretch = state.expression === "happy" ? 1.05 : 1;
     this.squash.scale.set(
       breath * happyStretch,
       breath * happySquash,
@@ -149,6 +159,7 @@ export class GrokBot {
     this.openness = 1;
     this.lookX = 0;
     this.lookY = 0;
+    this.nextAutoBlink = 2.6;
   }
 
   private consumeTokens(state: BotState): void {
@@ -215,57 +226,64 @@ export class GrokBot {
     return 0;
   }
 
-  private createEye(mark: EyeMark, lut: Float32Array, depth: number): EyeRig {
-    const surface = surfacePoint(lut, depth, mark.centroid.x, mark.centroid.y);
-    const radius = mark.width * 0.5;
-    const shaft = Math.max(0.001, mark.length - mark.width);
-    const geometry = new THREE.CapsuleGeometry(radius, shaft, 8, 20);
+  private createEye(
+    mark: EyeMark,
+    head: THREE.Mesh,
+    lut: Float32Array,
+    depth: number,
+  ): EyeRig {
+    head.updateMatrixWorld(true);
+    const raycaster = new THREE.Raycaster();
+    raycaster.set(
+      new THREE.Vector3(mark.centroid.x, mark.centroid.y, 5),
+      new THREE.Vector3(0, 0, -1),
+    );
+    const hit = raycaster.intersectObject(head)[0];
+    const analytic = surfacePoint(lut, depth, mark.centroid.x, mark.centroid.y);
+    const position = hit?.point.clone() ?? analytic.position;
+    const normal = hit?.normal?.clone().normalize() ?? analytic.normal;
+
+    const radius = Math.max(0.088, mark.width * 0.54);
+    const shaft = Math.max(0.1, mark.length - mark.width * 0.88);
+    const geometry = new THREE.CapsuleGeometry(radius, shaft, 10, 24);
     const mesh = new THREE.Mesh(
       geometry,
       new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
-        roughness: 0.22,
+        roughness: 0.28,
         metalness: 0,
         emissive: 0xffffff,
-        emissiveIntensity: 0.28,
-        clearcoat: 0.2,
-        clearcoatRoughness: 0.35,
+        emissiveIntensity: 0.62,
+        clearcoat: 0.15,
+        clearcoatRoughness: 0.4,
+        toneMapped: false,
       }),
     );
     mesh.castShadow = true;
+    mesh.renderOrder = 2;
 
-    const normal = surface.normal.clone();
-    const longAxis = new THREE.Vector3(mark.axis.x, mark.axis.y, 0);
-    longAxis.addScaledVector(normal, -longAxis.dot(normal)).normalize();
-    const tangentX = new THREE.Vector3().crossVectors(longAxis, normal).normalize();
-    const tangentY = longAxis.clone();
-    const basis = new THREE.Matrix4().makeBasis(tangentX, tangentY, normal);
-    const orientation = new THREE.Quaternion().setFromRotationMatrix(basis);
+    const tilt = Math.atan2(mark.axis.y, mark.axis.x) - Math.PI / 2;
+    const tangentY = new THREE.Vector3(mark.axis.x, mark.axis.y, 0).normalize();
+    const tangentX = new THREE.Vector3(-mark.axis.y, mark.axis.x, 0).normalize();
+    const rest = position.addScaledVector(normal, radius * 0.72);
 
     const group = new THREE.Group();
-    const rest = surface.position.clone().addScaledVector(normal, radius * 0.42);
     group.position.copy(rest);
-    group.quaternion.copy(orientation);
+    group.rotation.z = tilt;
     group.add(mesh);
 
     return { group, mesh, rest, normal, tangentX, tangentY };
   }
 }
 
-function eyeTargets(
-  expression: Expression,
-  time: number,
-): { openness: number; squintRot: number } {
+function eyeTargets(expression: Expression): { openness: number; squintRot: number } {
   switch (expression) {
     case "idle":
       return { openness: 1, squintRot: 0 };
     case "happy":
-      return { openness: 0.5, squintRot: 0.1 };
-    case "blink": {
-      const cycle = (time % 1.35) / 1.35;
-      const closed = cycle < 0.18 ? Math.sin((cycle / 0.18) * Math.PI) : 0;
-      return { openness: 1 - closed * 0.94, squintRot: 0 };
-    }
+      return { openness: 0.36, squintRot: 0.16 };
+    case "blink":
+      return { openness: 0.08, squintRot: 0 };
     case "look-around":
       return { openness: 1, squintRot: 0 };
     default:

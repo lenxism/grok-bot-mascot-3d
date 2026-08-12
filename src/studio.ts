@@ -40,17 +40,17 @@ export function createStudio(canvas: HTMLCanvasElement): Studio {
     0.1,
     40,
   );
-  camera.position.set(0.55, 0.28, 5.1);
+  camera.position.set(0.32, 1.42, 5.7);
 
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
   controls.enablePan = false;
-  controls.minDistance = 3.2;
-  controls.maxDistance = 8;
-  controls.minPolarAngle = 0.85;
-  controls.maxPolarAngle = 1.55;
-  controls.target.set(0, 0.12, 0);
+  controls.minDistance = 3.6;
+  controls.maxDistance = 9;
+  controls.minPolarAngle = 0.72;
+  controls.maxPolarAngle = 1.48;
+  controls.target.set(0, 1.28, 0);
   controls.update();
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0xc9cdd4, 0.78));
