@@ -6,6 +6,10 @@ The head is a real mesh inflated from `assets/grok-bot-mark.svg`, not a PNG bill
 
 [@lenxism](https://x.com/lenxism)
 
+## Live
+
+https://lenxism.github.io/grok-bot-mascot-3d/
+
 ## Run
 
 ```bash
